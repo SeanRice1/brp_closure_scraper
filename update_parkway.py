@@ -1,6 +1,8 @@
 import requests, pprint
+import json
 from bs4 import BeautifulSoup
 from fastkml import kml
+from kml2geojson import convert
 
 pp = pprint.PrettyPrinter()
 
@@ -84,7 +86,7 @@ for placemark in features_list:
 
     if (placemark.styleUrl.split('-')[0] == '#icon'): # check if style is line or icon
         styleUrl = 'icon'
-    
+
     for row in parkway_status:
         if match == True:
             break
@@ -96,7 +98,7 @@ for placemark in features_list:
             notes = row['notes']
         if placemark.name == crossroads:
             match = True
-   
+
     if match == True:
         placemark.description = f'Mileposts: {mileposts}<br>Status: {status}<br>Notes: {notes}'
 
@@ -114,8 +116,8 @@ for placemark in features_list:
 
         extended_data_string = f"""
         <kml:ExtendedData xmlns:kml="http://www.opengis.net/kml/2.2">
-          <kml:Data name="mileposts">    
-            <kml:value>{mileposts}</kml:value> 
+          <kml:Data name="mileposts">
+            <kml:value>{mileposts}</kml:value>
           </kml:Data>
           <kml:Data name="status">
             <kml:value>{status}</kml:value>
@@ -133,6 +135,17 @@ for placemark in features_list:
         #        element.value = status
         #    elif element.name == 'notes':
         #        element.value = notes
-       
-with open("output.kml", "wt") as f:
-    f.writelines(k.to_string(prettyprint=True))
+
+with open("output.kml", "w+") as f:
+    f.writelines(k.to_string())
+
+# convert expects a file
+with open("output.kml", "r") as kml_file, open("output.json", "w+") as json_file:
+    converted_kml_file = convert(kml_file)
+    pretty_json = json.dumps(
+        converted_kml_file[0],
+        sort_keys=True,
+        indent=4,
+        separators=(',', ': ')
+    )
+    json_file.writelines(pretty_json)
